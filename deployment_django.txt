@@ -1,0 +1,107 @@
+
+===========instalacion de paqueteria inciale==================
+instalacion de pip
+instalacion de setuptools 
+instalacion de virtualenv
+ejecutar: virtualenv <nombre_sitio>
+run: source <nombre_sitio>/bin/activate #cambiara el promt de la consola
+derun: deactivate  #el promt se restablecera el promt a su modo normal
+
+===========instalacion de uwsgi==================
+run: source <nombre_sitio>/bin/activate sino lo ha echo
+decargar el fuente de uWSGI con wget o curl
+extraer el fuente: tar xzvf uwsgi-x.x.x.tar.gz
+moverse al carpeta extraida
+compilar: make .
+copiar: cp uwsgi $VIRTUAL_ENV/bin
+testing:
+	desde el root del sitio ejecutar: mkdir test && touch test/test_uwsgi.py && cd test
+	editar: gedit test_uwsgi.py
+	escribir dentro del archivo y guardar:
+		#inicio
+		def application(env, start_response):
+    	start_response('200 OK', [('Content-Type','text/html')])
+    	return "Hello World"
+    #fin
+	desde el root del entorno virtual ejecutar: bin/uwsgi --http :8000 --wsgi-file test/test_uwsgi.py
+	abrir un navegador e ir a: "http://localhost:8000" debera aparecer "hello word"
+
+===========instalacion de Django==================
+ejecutar desde el root del sitio:	bin/pip install Django
+ejecutar: django-admin.py startproject <nombre-projecto>
+para probrar configuracion:
+	instalar Mysql
+	configurar la BD en la seccion conrrespondiente en settings.py
+	descomentar las lineas del sistema de administracion	en settings.py y urls.py
+	ingresar al nivel de manage.py 
+	ejecutar para probar con uwsgi:uwsgi --http :8000 --wsgi-file mysite/wsgi.py
+
+#hasta aqui hay problemas al ejecutar uwsgi desde una univacion diferente a la del manage.py
+#produce un error al no encontrar el settings.py
+#no se muestran los stilos CSS hasta este momento
+
+===========instalacion de mysql==================
+instalar el Mysql en el sistema base
+dentro de virtualenv ejecutar: pip install MySQL-python
+
+===========configuracion de archivo ini para uwsgi <-> django==================
+ir al nivel de manage.py en la carpeta del sitio django
+crear un archivo <nombre>.ini. ejemplo: touch uwsgi_mysite.ini
+colocar los parametros correspondientes (mirar en uwsgi_mysite.ini)
+ir al root del virtualenv y ejecutar:	uwsgi --ini ./<nombre del sitio>/<nombre>.ini
+testing:
+	abrir el navegador y colocar la direccion del http-socket
+	comprobar que corra la aplicacion django
+
+===========instalacion de NGINX==================
+run: source <nombre_sitio>/bin/activate  si no lo ha echo
+descargar los fuentes desde la web
+extraer con tar
+mv a la carpeta de fuentes
+ejecutar: #inicio_comando 
+	./configure \
+	--prefix=$VIRTUAL_ENV/nginx \
+	--sbin-path=bin/ \
+	--conf-path=conf/ \
+	--pid-path=pid/ \
+	--error-log-path=log/ \
+	--http-log-path=log/ \
+	--without-http_rewrite_module \
+	#--user=unginx
+	#--group=gnginx
+	#fin_comando
+#without-http_rewrite_module <- no se necesitara
+compilar: make .
+instalar: make install
+
+### NOTA: puede ser que necesite compilar con unos modulos extras para otras directivas adicionales
+
+===========configuracion de NGINX para prueba inicial==================
+### NOTA: esto aplica para cuando se configura el sitio de django
+crear un archivo .conf en la carpeta del archivo de prueba de uwsgi test/test_uwsgi.py (o sitio django)
+colocar las directivas necesarias y definir (ver el archivo):
+	dentro de server:
+		puerto de escucha: listen ####;
+		nombre del sitio: server_name abc.xyz;
+		locaciones de /static y /media para django
+		locacion del root_site "/"
+			aggregar: uwsgi_pass [ unix:/path/to/unix_socket | nombre de una directiva upstream ];
+				### NOTA: si es utiliza un unix_socket, procurar que se otorguen los permisos necesario 
+									para escritura de otros usuarios (usuario de nginx)	o ejecutar
+									nginx con el mismo grupo o usuario con que se ejecuta el uwsgi
+				###
+copiar el archivo dentro de conf/vhost: "cp /root_virtualenv/sitio_django/nombre.conf /root_virtualenv/conf/vhost/"
+agregar la directiva "include vhost/*.conf" al archivo "conf/nginx.conf"
+si realiza un nuevo cambio en la configuracion ->	copiar archivo a conf/vhost nuevamente
+	
+=========== test de NGINX <-> uwsgi ==================
+NOTA: si se ejecuta uwsgi para que se ejecute sitio django sobre un unix_socket, 
+			procurar que se otorguen los permisos necesario para escritura desde otros usuarios (usuario de nginx)
+			o ejecutar nginx con el mismo grupo o usuario con que se ejecuta el uwsgi
+inciar uwsgi en modo socket:
+	comando: uwsgi --socket tmp/test.sock wsgi-file test/test_uwsgi.py --chmod-socket=666
+	#si chmod-socket=664 -> ejecutar NGINX con un usuario en el mismo grupo que uwsgi 
+iniciar NGINX:
+	comando: sudo bin/nginx
+si realiza un cambio en al configuracion de NGINX ->
+	reload NGINX: "sudo bin/nginx -s reload"
