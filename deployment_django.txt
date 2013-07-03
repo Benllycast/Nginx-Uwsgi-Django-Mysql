@@ -1,48 +1,98 @@
 
-===========instalacion de paqueteria inciale==================
-instalacion de pip
-instalacion de setuptools 
-instalacion de virtualenv
-ejecutar: virtualenv <nombre_sitio>
-run: source <nombre_sitio>/bin/activate #cambiara el promt de la consola
-derun: deactivate  #el promt se restablecera el promt a su modo normal
+###
+	NOTA:
+		algunos comandos requieren privilegios de administrador.
+		si se produce algun erro mirar la documentacion respectiva (GOOGLE).
+###
 
-===========instalacion de uwsgi==================
-run: source <nombre_sitio>/bin/activate sino lo ha echo
-decargar el fuente de uWSGI con wget o curl
-extraer el fuente: tar xzvf uwsgi-x.x.x.tar.gz
-moverse al carpeta extraida
-compilar: make .
-copiar: cp uwsgi $VIRTUAL_ENV/bin
-testing:
-	desde el root del sitio ejecutar: mkdir test && touch test/test_uwsgi.py && cd test
-	editar: gedit test_uwsgi.py
+=========== ::: instalacion de paqueteria inicial ::: ==================
+instalacion de pip
+	comando: apt-get install python-pip
+instalacion de setuptools
+	comando: apt-get install python-setuptools
+instalacion de virtualenv
+	comando: apt-get install python-virtualenv
+
+=========== ::: VIRTUALENV ::: ==================
+crear virtualenv:
+	virtualenv /path/to/site/name
+
+activar virtualenv:
+	comando: source /path/to/site/name/bin/activate #cambiara el promt de la consola
+	NOTA:
+		mirar el archivo bin/activate. hay ciertas variables de entorno que pueden
+		utilizarce en la consola como $VIRTUAL_ENV que apunta al path donde se activa
+		el virtualenv.
+		
+desactivar virtualenv:
+	deactivate  #el promt se restablecera el promt a su modo normal
+
+=========== ::: instalacion de uwsgi por codigo fuente ::: ==================
+activar el virtualenv si no lo ha echo
+crear una carpeta para los paquetes descargados
+	comando: mkdir pkg && cd pkg
+
+decargar el fuente de uWSGI con wget o curl:
+	cpmando: wget http://projects.unbit.it/downloads/uwsgi-1.4.9.tar.gz
+
+extraer el fuente:
+	comando:	tar xzvf uwsgi-x.x.x.tar.gz
+
+moverse al carpeta extraida y compilar el fuente con make:
+	comando: make .
+	NOTA:
+		posiblemente necesite paqueteria adicional, si es asi ejecute:
+			apt-get install build-essential python
+			apt-get install python-dev
+
+si no posee make puede intentar con:
+	comando: python uwsgiconfig.py --build
+	otro: pip install uwsgi
+	otro: pip install http://projects.unbit.it/downloads/uwsgi-lts.tar.gz
+	
+copiar el ejecutable de uwsgi a la carpeta bin:
+	comando: cp uwsgi $VIRTUAL_ENV/bin
+	
+testeando la ejecucion del uwsgi:
+	desde el root del del virtualenv hacer:
+	ejecutar: 
+		comando: mkdir test && touch test/test_uwsgi.py && cd test
+	editar:
+		comando: gedit test_uwsgi.py
 	escribir dentro del archivo y guardar:
 		#inicio
 		def application(env, start_response):
     	start_response('200 OK', [('Content-Type','text/html')])
     	return "Hello World"
     #fin
-	desde el root del entorno virtual ejecutar: bin/uwsgi --http :8000 --wsgi-file test/test_uwsgi.py
-	abrir un navegador e ir a: "http://localhost:8000" debera aparecer "hello word"
+	desde el root del entorno virtual ejecutar:
+		comando: uwsgi --http :8000 --wsgi-file test/test_uwsgi.py
+	abrir un navegador e ir a: "http://localhost:8000" debera aparecer "Hello World"
 
-===========instalacion de Django==================
-ejecutar desde el root del sitio:	bin/pip install Django
-ejecutar: django-admin.py startproject <nombre-projecto>
+===========::: Django ::: ==================
+activar el virtualenv si no lo ha echo
+ejecutar desde el root del virtualenv:	
+	comando: bin/pip install django
+crear un nuevo projecto de Django: 
+	comando: django-admin.py startproject mysite
 para probrar configuracion:
-	instalar Mysql
+	instalar Mysqlo probar con sqlite
 	configurar la BD en la seccion conrrespondiente en settings.py
-	descomentar las lineas del sistema de administracion	en settings.py y urls.py
-	ingresar al nivel de manage.py 
+	descomentar las lineas requeridas del sistema de administracion	en settings.py y urls.py
+	ir al nivel de manage.py y validar los modelos en la BD:
+		comando: python manage.py validate
 	ejecutar para probar con uwsgi:uwsgi --http :8000 --wsgi-file mysite/wsgi.py
 
 #hasta aqui hay problemas al ejecutar uwsgi desde una univacion diferente a la del manage.py
 #produce un error al no encontrar el settings.py
 #no se muestran los stilos CSS hasta este momento
 
+#/////////por aqui quede//////////
 ===========instalacion de mysql==================
 instalar el Mysql en el sistema base
-dentro de virtualenv ejecutar: pip install MySQL-python
+	comando: apt-get install mysql-server mysql-client
+dentro de virtualenv ejecutar:
+	comando: pip install MySQL-python
 
 ===========configuracion de archivo ini para uwsgi <-> django==================
 ir al nivel de manage.py en la carpeta del sitio django
@@ -69,12 +119,15 @@ ejecutar: #inicio_comando
 	--without-http_rewrite_module \
 	#--user=unginx
 	#--group=gnginx
+	#--without-http_rewrite_module <- no se necesitara
 	#fin_comando
-#without-http_rewrite_module <- no se necesitara
+
 compilar: make .
 instalar: make install
-
-### NOTA: puede ser que necesite compilar con unos modulos extras para otras directivas adicionales
+copiar el ejecutable nginx dentro de /virtualenv_root/bin
+crear una carpeta dentro de /virtualenv_root/conf/ llamada vhost/ para los archivos de configuracion
+### NOTA: 
+	puede ser que necesite compilar con unos modulos extras para otras directivas adicionales
 
 ===========configuracion de NGINX para prueba inicial==================
 ### NOTA: esto aplica para cuando se configura el sitio de django
@@ -86,18 +139,22 @@ colocar las directivas necesarias y definir (ver el archivo):
 		locaciones de /static y /media para django
 		locacion del root_site "/"
 			aggregar: uwsgi_pass [ unix:/path/to/unix_socket | nombre de una directiva upstream ];
-				### NOTA: si es utiliza un unix_socket, procurar que se otorguen los permisos necesario 
-									para escritura de otros usuarios (usuario de nginx)	o ejecutar
-									nginx con el mismo grupo o usuario con que se ejecuta el uwsgi
+				### NOTA:
+					si es utiliza un unix_socket, procurar que se otorguen los permisos necesario 
+					para escritura de otros usuarios (usuario de nginx)	o ejecutar
+					nginx con el mismo grupo o usuario con que se ejecuta el uwsgi
 				###
+
 copiar el archivo dentro de conf/vhost: "cp /root_virtualenv/sitio_django/nombre.conf /root_virtualenv/conf/vhost/"
 agregar la directiva "include vhost/*.conf" al archivo "conf/nginx.conf"
 si realiza un nuevo cambio en la configuracion ->	copiar archivo a conf/vhost nuevamente
 	
 =========== test de NGINX <-> uwsgi ==================
-NOTA: si se ejecuta uwsgi para que se ejecute sitio django sobre un unix_socket, 
-			procurar que se otorguen los permisos necesario para escritura desde otros usuarios (usuario de nginx)
-			o ejecutar nginx con el mismo grupo o usuario con que se ejecuta el uwsgi
+NOTA: 
+	si se ejecuta uwsgi para que se ejecute sitio django sobre un unix_socket, 
+	procurar que se otorguen los permisos necesario para escritura desde otros usuarios (usuario de nginx)
+	o ejecutar nginx con el mismo grupo o usuario con que se ejecuta el uwsgi
+
 inciar uwsgi en modo socket:
 	comando: uwsgi --socket tmp/test.sock wsgi-file test/test_uwsgi.py --chmod-socket=666
 	#si chmod-socket=664 -> ejecutar NGINX con un usuario en el mismo grupo que uwsgi 
@@ -105,3 +162,11 @@ iniciar NGINX:
 	comando: sudo bin/nginx
 si realiza un cambio en al configuracion de NGINX ->
 	reload NGINX: "sudo bin/nginx -s reload"
+
+=========== test de NGINX <-> uwsgi <-> Django ==================
+::: uWSGI :::
+
+::: NGINX :::
+	en el archivo .conf echo en la carpeta del sitio Django agregar una directiva
+	upstream seguido de un server apuntando a el socket unix definido en el .ini 
+	de la seccion uwsgi.
