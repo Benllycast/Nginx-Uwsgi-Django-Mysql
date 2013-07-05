@@ -69,63 +69,77 @@ testeando la ejecucion del uwsgi:
 		comando: uwsgi --http :8000 --wsgi-file test/test_uwsgi.py
 	abrir un navegador e ir a: "http://localhost:8000" debera aparecer "Hello World"
 
-===========::: Django ::: ==================
+=========== ::: Django ::: ==================
 activar el virtualenv si no lo ha echo
 ejecutar desde el root del virtualenv:	
 	comando: bin/pip install django
 crear un nuevo projecto de Django: 
 	comando: django-admin.py startproject mysite
 para probrar configuracion:
-	instalar Mysqlo probar con sqlite
+	instalar Mysql o probar con sqlite
 	configurar la BD en la seccion conrrespondiente en settings.py
 	descomentar las lineas requeridas del sistema de administracion	en settings.py y urls.py
 	ir al nivel de manage.py y validar los modelos en la BD:
 		comando: python manage.py validate
-	ejecutar para probar con uwsgi:uwsgi --http :8000 --wsgi-file mysite/wsgi.py
+	ejecutar para probar con:
+		comando: uwsgi --http :8000 --wsgi-file mysite/wsgi.py
 
-#hasta aqui hay problemas al ejecutar uwsgi desde una univacion diferente a la del manage.py
-#produce un error al no encontrar el settings.py
-#no se muestran los stilos CSS hasta este momento
+NOTA: 
+	hasta aqui hay problemas al ejecutar uwsgi desde una uvicacion diferente a la del manage.py 
+	produce un error al no encontrar el settings.py
+	no se muestran los stilos CSS hasta este momento
 
 #/////////por aqui quede//////////
 ===========instalacion de mysql==================
 instalar el Mysql en el sistema base
 	comando: apt-get install mysql-server mysql-client
+para probar testing:
+	comando: mysql -u root -p
 dentro de virtualenv ejecutar:
 	comando: pip install MySQL-python
 
-===========configuracion de archivo ini para uwsgi <-> django==================
+=========== configuracion de archivo ini para uwsgi <-> django ==================
 ir al nivel de manage.py en la carpeta del sitio django
-crear un archivo <nombre>.ini. ejemplo: touch uwsgi_mysite.ini
+crear un archivo <nombre>.ini. ejemplo:
+	comando: touch uwsgi_mysite.ini
 colocar los parametros correspondientes (mirar en uwsgi_mysite.ini)
-ir al root del virtualenv y ejecutar:	uwsgi --ini ./<nombre del sitio>/<nombre>.ini
+ir al root del virtualenv y ejecutar:	
+	comando: uwsgi --ini ./<nombre del sitio>/<nombre>.ini
 testing:
 	abrir el navegador y colocar la direccion del http-socket
 	comprobar que corra la aplicacion django
 
 ===========instalacion de NGINX==================
 run: source <nombre_sitio>/bin/activate  si no lo ha echo
-descargar los fuentes desde la web
-extraer con tar
-mv a la carpeta de fuentes
-ejecutar: #inicio_comando 
+ir al carpeta pkg anteriormente creada.
+descargar los fuentes de NGINX y pcre-8.33 desde la web y extraer con tar.
+mv a la carpeta de fuentes de NGINX
+ejecutar:
+#inicio 
 	./configure \
-	--prefix=$VIRTUAL_ENV/nginx \
-	--sbin-path=bin/ \
-	--conf-path=conf/ \
-	--pid-path=pid/ \
-	--error-log-path=log/ \
-	--http-log-path=log/ \
-	--without-http_rewrite_module \
-	#--user=unginx
-	#--group=gnginx
-	#--without-http_rewrite_module <- no se necesitara
-	#fin_comando
+	--prefix=$VIRTUAL_ENV \
+	--sbin-path=bin/nginx \
+	--conf-path=conf/nginx.conf \
+	--pid-path=logs/nginx.pid \
+	--error-log-path=logs/error.log \
+	--http-log-path=logs/access.log \
+	--with-pcre=$VIRTUAL_ENV/pkg/pcre-8.33
+#fin
+se puede agregar ademas los siguientes parametros 
+	--user=unginx
+	--group=gnginx
+
+si no quiere el modulo rewrite agreagar los siguiente a los parametros
+	--without-http_rewrite_module
 
 compilar: make .
 instalar: make install
 copiar el ejecutable nginx dentro de /virtualenv_root/bin
 crear una carpeta dentro de /virtualenv_root/conf/ llamada vhost/ para los archivos de configuracion
+abrir con un editor el archivo conf/nginx.conf y agregar antes del la ultima 
+llave de cierre lo siguiente:
+	include ./vhost/*;
+	
 ### NOTA: 
 	puede ser que necesite compilar con unos modulos extras para otras directivas adicionales
 
@@ -133,9 +147,10 @@ crear una carpeta dentro de /virtualenv_root/conf/ llamada vhost/ para los archi
 ### NOTA: esto aplica para cuando se configura el sitio de django
 crear un archivo .conf en la carpeta del archivo de prueba de uwsgi test/test_uwsgi.py (o sitio django)
 colocar las directivas necesarias y definir (ver el archivo):
-	dentro de server:
+	dentro de la directiva server:
 		puerto de escucha: listen ####;
-		nombre del sitio: server_name abc.xyz;
+		nombre del sitio: server_name abc.xyz;	
+		# NOTA: si coloca un nombre en server_name, verificar que se pueda resovler a una direccion IP en /etc/hosts
 		locaciones de /static y /media para django
 		locacion del root_site "/"
 			aggregar: uwsgi_pass [ unix:/path/to/unix_socket | nombre de una directiva upstream ];
