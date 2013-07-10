@@ -134,10 +134,10 @@ si no quiere el modulo rewrite agreagar los siguiente a los parametros
 
 compilar: make .
 instalar: make install
-copiar el ejecutable nginx dentro de /virtualenv_root/bin
+copiar el ejecutable nginx dentro de /virtualenv_root/bin (revisar si se realizo durante la instalacion)
 crear una carpeta dentro de /virtualenv_root/conf/ llamada vhost/ para los archivos de configuracion
-abrir con un editor el archivo conf/nginx.conf y agregar antes del la ultima 
-llave de cierre lo siguiente:
+abrir con un editor el archivo conf/nginx.conf y agregar antes de la ultima llave 
+de cierre lo siguiente:
 	include ./vhost/*;
 	
 ### NOTA: 
@@ -150,7 +150,7 @@ colocar las directivas necesarias y definir (ver el archivo):
 	dentro de la directiva server:
 		puerto de escucha: listen ####;
 		nombre del sitio: server_name abc.xyz;	
-		# NOTA: si coloca un nombre en server_name, verificar que se pueda resovler a una direccion IP en /etc/hosts
+		# NOTA: si coloca un nombre en server_name, verificar que se pueda resolver a una direccion IP en /etc/hosts
 		locaciones de /static y /media para django
 		locacion del root_site "/"
 			aggregar: uwsgi_pass [ unix:/path/to/unix_socket | nombre de una directiva upstream ];
@@ -166,7 +166,7 @@ si realiza un nuevo cambio en la configuracion ->	copiar archivo a conf/vhost nu
 	
 =========== test de NGINX <-> uwsgi ==================
 NOTA: 
-	si se ejecuta uwsgi para que se ejecute sitio django sobre un unix_socket, 
+	si se ejecuta uwsgi para que ejecute un sitio django sobre un unix_socket, 
 	procurar que se otorguen los permisos necesario para escritura desde otros usuarios (usuario de nginx)
 	o ejecutar nginx con el mismo grupo o usuario con que se ejecuta el uwsgi
 
