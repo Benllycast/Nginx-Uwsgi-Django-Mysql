@@ -1,8 +1,23 @@
 
 ###
 	NOTA:
+		esta practica se genero bajo el siguiente ambiente
+			SO: ubuntu 10.4 (32b) (linux/Debian - Virtual Machine)
+			Procesador: AMD 4800 
+			Memoria: 1Gb
 		algunos comandos requieren privilegios de administrador.
 		si se produce algun erro mirar la documentacion respectiva (GOOGLEee...).
+	RECURSOS NECESARIOS:
+		codigo fuente de NGINX
+		codigo fuente de uWSGI
+		pip
+		setuptools
+		virtualenv
+		python2.7.+ (python, python-dev)
+		Django
+		Mysql + libmysqlclient
+		
+		
 ###
 
 =========== ::: instalacion de paqueteria inicial ::: ==================
@@ -15,7 +30,7 @@ instalacion de virtualenv
 
 =========== ::: VIRTUALENV ::: ==================
 crear virtualenv:
-	virtualenv /path/to/site/name
+	comando: virtualenv /path/to/site/name
 
 activar virtualenv:
 	comando: source /path/to/site/name/bin/activate #cambiara el promt de la consola
@@ -25,7 +40,7 @@ activar virtualenv:
 		el virtualenv.
 		
 desactivar virtualenv:
-	deactivate  #el promt se restablecera el promt a su modo normal
+	comando: deactivate  #el promt se restablecera el promt a su modo normal
 
 =========== ::: instalacion de uwsgi por codigo fuente ::: ==================
 activar el virtualenv si no lo ha echo
@@ -33,7 +48,7 @@ crear una carpeta para los paquetes descargados
 	comando: mkdir pkg && cd pkg
 
 decargar el fuente de uWSGI con wget o curl:
-	cpmando: wget http://projects.unbit.it/downloads/uwsgi-1.4.9.tar.gz
+	comando: wget http://projects.unbit.it/downloads/uwsgi-1.4.9.tar.gz
 
 extraer el fuente:
 	comando:	tar xzvf uwsgi-x.x.x.tar.gz
@@ -164,7 +179,7 @@ colocar las directivas necesarias y definir (ver el archivo):
 		# NOTA: si coloca un nombre en server_name, verificar que se pueda resolver a una direccion IP en /etc/hosts
 		locaciones de /static y /media para django
 		locacion del root_site "/"
-			aggregar: uwsgi_pass [ unix:/path/to/unix_socket | nombre de una directiva upstream ];
+			aggregar: uwsgi_pass [ unix:/path/to/unix_socket | <nombre de una directiva upstream> ];
 				### NOTA:
 					si es utiliza un unix_socket, procurar que se otorguen los permisos necesario 
 					para escritura de otros usuarios (usuario de nginx)	o ejecutar
@@ -173,6 +188,7 @@ colocar las directivas necesarias y definir (ver el archivo):
 
 copiar el archivo dentro de conf/vhost: 
 	comando: cp /root_virtualenv/sitio_django/nombre.conf /root_virtualenv/conf/vhost/
+
 agregar la directiva "include vhost/*.conf" al archivo "conf/nginx.conf"
 si realiza un nuevo cambio en la configuracion ->	copiar archivo a conf/vhost nuevamente
 	
@@ -194,6 +210,7 @@ si realiza un cambio en al configuracion de NGINX ->
 
 =========== test de NGINX <-> uwsgi <-> Django ==================
 inicia rel virtualenv si no lo ha echo
+
 ::: uWSGI :::
 	iniciar uwsgi con el archivo de configuracion ini del sitio Django.
 		comando: uwsgi --ini mysite/uwsgi_conf.ini
@@ -209,7 +226,24 @@ inicia rel virtualenv si no lo ha echo
 	nuevamente el archivo a la carpeta vhost y recargar NGINX con:
 		comando: sudo bin/nginx -s reload
 
+=========== cambiar usuario a NGINX y uwsgi ==================
+NOTA:
+	verificar que ya tiene definido el usuario "www-data" en "/etc/shadow" y el el grupo "www-data" en /etc/group
+::: uWSGI :::
+	para cambiar el usuario de ejecucion de uwsgi ir al archivo ini del sitio Django
+	agregar las siguientes lineas:
+		uid = <username | uid>
+		gid = <groupname | gid>
+		
+		ejemplo:
+			uid = www-data
+			gid = www-data
+
+::: NGINX :::
+	para cambiar el usuario de ejecucion en NGINX buscar el archivo conf/nginx.conf
+	abrirlo con un editor y buscar la linea que dice "#user nobody;".
+	en "nobody" cambiar con el nombre de usuario que desee ej: www-data
+	
 =========== cosas por hacer ==================
-iniciar uwsi y NGINX con un usuario diferente al de root ej: www-data
 instalar NGINX en sistema base y probar el sitio desde alli
 
