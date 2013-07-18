@@ -15,9 +15,8 @@
 		virtualenv
 		python2.7.+ (python, python-dev)
 		Django
-		Mysql + libmysqlclient
-		
-		
+		Mysql + libmysqlclient-dev
+		MySQL-python
 ###
 
 =========== ::: instalacion de paqueteria inicial ::: ==================
@@ -68,11 +67,11 @@ si no posee make puede intentar con:
 copiar el ejecutable de uwsgi a la carpeta bin:
 	comando: cp uwsgi $VIRTUAL_ENV/bin
 	
-testeando la ejecucion del uwsgi:
+:::testeando la ejecucion del uwsgi:::
 	desde el root del del virtualenv hacer:
-	ejecutar: 
+	crear una carpeta test y dentro un archivo python para insertar el codigo de prueba: 
 		comando: mkdir test && touch test/test_uwsgi.py && cd test
-	editar:
+	con su editor favorito abrir el archivo python creado anteriormente:
 		comando: gedit test_uwsgi.py
 	escribir dentro del archivo y guardar:
 		#inicio
@@ -80,7 +79,7 @@ testeando la ejecucion del uwsgi:
     	start_response('200 OK', [('Content-Type','text/html')])
     	return "Hello World"
     #fin
-	desde el root del entorno virtual ejecutar:
+	desde el raiz del entorno virtual ejecutar el comando para iniciar uWSGI con el archivo python:
 		comando: uwsgi --http :8000 --wsgi-file test/test_uwsgi.py
 	abrir un navegador e ir a: "http://localhost:8000" debera aparecer "Hello World"
 
@@ -195,8 +194,9 @@ si realiza un nuevo cambio en la configuracion ->	copiar archivo a conf/vhost nu
 =========== test de NGINX <-> uwsgi ==================
 NOTA: 
 	si se ejecuta uwsgi para que ejecute un sitio django sobre un unix_socket, 
-	procurar que se otorguen los permisos necesario para escritura desde otros usuarios (usuario de nginx)
-	o ejecutar nginx con el mismo grupo o usuario con que se ejecuta el uwsgi
+	procurar que se otorguen los permisos necesario para escritura desde otros usuarios 
+	(usuario con que se ejecuta de nginx)	o ejecutar nginx con el mismo grupo o 
+	usuario con que se ejecuta el uwsgi
 
 inciar uwsgi en modo socket:
 	comando: uwsgi --socket tmp/test.sock wsgi-file test/test_uwsgi.py --chmod-socket=666
@@ -242,7 +242,7 @@ NOTA:
 ::: NGINX :::
 	para cambiar el usuario de ejecucion en NGINX buscar el archivo conf/nginx.conf
 	abrirlo con un editor y buscar la linea que dice "#user nobody;".
-	en "nobody" cambiar con el nombre de usuario que desee ej: www-data
+	descomentar esa linea y en "nobody" cambiar con el nombre de usuario que desee ej: www-data
 	
 =========== cosas por hacer ==================
 instalar NGINX en sistema base y probar el sitio desde alli
