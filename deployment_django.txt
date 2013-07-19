@@ -94,13 +94,19 @@ crear un nuevo projecto de Django:
 para probrar configuracion:
 	instalar Mysql o probar con sqlite
 
-	configurar la BD en la seccion conrrespondiente en settings.py
+	configurar la BD en la seccion conrrespondiente en settings.py. esto es donde se
+	define la BD que se utilizara para el backend del projecto. observe la documentacion
+	y encontrara la respuesta.
 
-	descomentar las lineas requeridas del sistema de administracion	en settings.py y urls.py
+	descomentar las lineas requeridas del sistema de administracion	en settings.py 
+	(en la seccion de INSTALL_APPS) y urls.py (para la deficion de las rutas)
 
 	ir al nivel de manage.py y validar los modelos en la BD:
 		comando: python manage.py validate
-
+		
+	corregir errores si los hay, pero si es primera vez, le pedira un nombre de usuario y
+	password para la el administrador principal de la base de datos
+	
 	ejecutar para probar con:
 		comando: uwsgi --http :8000 --wsgi-file mysite/wsgi.py
 
