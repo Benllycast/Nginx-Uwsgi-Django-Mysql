@@ -83,6 +83,8 @@ copiar el ejecutable de uwsgi a la carpeta bin:
 		comando: uwsgi --http :8000 --wsgi-file test/test_uwsgi.py
 	abrir un navegador e ir a: "http://localhost:8000" debera aparecer "Hello World"
 
+## seccion completa ##
+
 =========== ::: Django ::: ==================
 activar el virtualenv si no lo ha echo
 ejecutar desde el root del virtualenv:	
@@ -91,29 +93,52 @@ ejecutar desde el root del virtualenv:
 crear un nuevo projecto de Django: 
 	comando: django-admin.py startproject mysite
 
-para probrar configuracion:
-	instalar Mysql o probar con sqlite
+configuracion para primera ejeccion:
+	instalar Mysql (ir a la seccion) o probar con sqlite si desea
 
 	configurar la BD en la seccion conrrespondiente en settings.py. esto es donde se
 	define la BD que se utilizara para el backend del projecto. observe la documentacion
-	y encontrara la respuesta.
+	y encontrara la respuesta. un ejemplo:
+	    #inicio#
+	        DATABASES = {
+                'default': {
+                    'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+                    'NAME': 'nombreBD',                   # Or path to database file if using sqlite3. (crear las BD en mysql si no existe)
+                    # The following settings are not used with sqlite3:
+                    'USER': 'root',                       # puede crear un usuario nuevo en mysql para esta operacion (consulte documetacion de mysql)
+                    'PASSWORD': '123456',
+                    'HOST': '',                      # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
+                    'PORT': '',                      # Set to empty string for default.
+                }
+            }
+	    #fin#
 
 	descomentar las lineas requeridas del sistema de administracion	en settings.py 
 	(en la seccion de INSTALL_APPS) y urls.py (para la deficion de las rutas)
 
 	ir al nivel de manage.py y validar los modelos en la BD:
 		comando: python manage.py validate
+		o comando: python manage.py syncdb (django > 1.5.x)
 		
 	corregir errores si los hay, pero si es primera vez, le pedira un nombre de usuario y
 	password para la el administrador principal de la base de datos
 	
-	ejecutar para probar con:
+	crear las carpetas static y media para servir archivos estaticos
+
+testing:
+    para probar django ejecute en la carpeta del manage.py:
+        comando: python manage.py runserver
+        comprobar en el navegador en la direccion: http://localhost:8000/admin
+                    
+	ejecutar para probar con uwsgi:
 		comando: uwsgi --http :8000 --wsgi-file mysite/wsgi.py
 
 NOTA: 
 	hasta aqui hay problemas al ejecutar uwsgi desde una uvicacion diferente a la del manage.py 
 	produce un error al no encontrar el settings.py
-	no se muestran los stilos CSS hasta este momento
+	no se muestran los stilos CSS hasta este momento. mas adelante se resuelve esto.
+
+##seccion completa##
 
 ===========instalacion de mysql==================
 instalar el Mysql en el sistema base
@@ -121,10 +146,16 @@ instalar el Mysql en el sistema base
 		sudo apt-get install libmysqlclient-dev
 
 para probar mysql este corriendo:
-	comando: mysql -u root -p
+    comando: mysql -u root -p
+    debera aparecer el pront "mysql>" en la consola
+
+para crear por primera vez la base de datos a utlizar con django ejecute el siguiente comando sql
+    comando: create database nombreBD
 
 dentro de virtualenv el conector de mysql:
-	comando: pip install MySQL-python
+    comando: pip install MySQL-python
+
+##seccion completa##
 
 =========== configuracion de archivo ini para uwsgi <-> django ==================
 ir al nivel de manage.py en la carpeta del sitio Django
@@ -132,71 +163,106 @@ crear un archivo <nombre>.ini. ejemplo:
 	comando: touch uwsgi_mysite.ini
 colocar los parametros correspondientes (mirar en uwsgi_mysite.ini)
 
-para esta prueba se debe comentar el parametro "socket" y descomentar el parametro "http-socket"
-ir al root del virtualenv y ejecutar:	
+para esta prueba se debe hacer:
+    comentar el parametro "socket" y "chmod-socket"
+    descomentar el parametro "http-socket".
+    si en el parametro "pidfile" tiene una ruta diferente, crear la ruta de carpetas 
+    (si es necesario) para que sea igual al parametro "pidfile".
+    
+ir al root del virtualenv y ejecutar:
 	comando: uwsgi --ini ./<nombre del sitio>/<nombre>.ini
+
 testing:
-	abrir el navegador y colocar la direccion del http-socket
-	comprobar que corra la aplicacion django
+	abrir el navegador y colocar la direccion del http-socket.
+	comprobar que corra la aplicacion django, aparecera un "page no found" pero 
+	puede entrar al admin mediante la ruta: http://<direccion del http-socket>/admin
+
+### seccion complete ###
 
 ===========instalacion de NGINX==================
 run: source <nombre_sitio>/bin/activate  si no lo ha echo (iniciar el virtualenv)
 ir al carpeta pkg anteriormente creada.
 descargar los fuentes de NGINX y pcre-8.33 desde la web y extraer con tar.
+    comando: tar xzvf nginx-1.4.1.tar.gz
+    comando: tar xjvf pcre-8.33.tar.bz2 
 mv a la carpeta de fuentes de NGINX
-ejecutar:
-#inicio 
-	./configure \
-	--prefix=$VIRTUAL_ENV \
-	--sbin-path=bin/nginx \
-	--conf-path=conf/nginx.conf \
-	--pid-path=logs/nginx.pid \
-	--error-log-path=logs/error.log \
-	--http-log-path=logs/access.log \
-	--with-pcre=$VIRTUAL_ENV/pkg/pcre-8.33
-#fin
-opcionalmente se puede agregar ademas los siguientes parametros 
+compilar nginx con el siguiente comando:
+    #inicio 
+	    ./configure \
+	    --prefix=$VIRTUAL_ENV \
+	    --sbin-path=bin/nginx \
+	    --conf-path=conf/nginx.conf \
+	    --pid-path=pid/nginx.pid \
+	    --error-log-path=logs/error.log \
+	    --http-log-path=logs/access.log \
+	    --with-pcre=$VIRTUAL_ENV/pkg/pcre-8.33
+    #fin
+opcionalmente se puede agregar los siguientes parametros 
 	--user=unginx
 	--group=gnginx
 
 si no quiere el modulo rewrite agreagar los siguiente a los parametros
 	--without-http_rewrite_module
 
-compilar: make .
-instalar: make install
-copiar el ejecutable nginx dentro de /virtualenv_root/bin (revisar si se realizo durante la instalacion)
-crear una carpeta dentro de /virtualenv_root/conf/ llamada vhost/ para los archivos de configuracion
-abrir con un editor el archivo conf/nginx.conf y agregar antes de la ultima llave 
-de cierre lo siguiente:
+compilar nginx (demora un poco no desespere): 
+    comando: make
+    
+instalar nginx:
+    comando: make install
+    
+copiar el ejecutable nginx dentro de $VIRTUAL_ENV/bin (revisar si se realizo durante la instalacion)
+    comando: cp nginx $VIRTUAL_ENV/bin/
+    
+crear una carpeta dentro de $VIRTUAL_ENV/conf/ llamada vhost/ para los archivos de configuracion
+    comando: mkdir conf/vhost
+    
+abrir con un editor el archivo conf/nginx.conf 
+    comando: gedit conf/nginx.conf
+y agregar antes de la ultima llave de cierre lo siguiente:
 	include ./vhost/*;
 	
 ### NOTA: 
 	puede ser que necesite compilar con unos modulos extras para otras directivas adicionales
 
+### seccion completa ###
+
 ===========configuracion de NGINX para prueba inicial==================
 ### NOTA: esto aplica para cuando se configura el sitio de django
+    algunas directivas no soportan las variables ($VIRTUAL_*) y hay que utilzar las rutas completas
 
 crear un archivo <nombre>.conf en la carpeta del archivo de prueba de uwsgi test/test_uwsgi.py (o sitio django)
+    comando: touch $VIRTUAL_ENV/[test o carpeta_django]/<nombre>.conf
+    
 colocar las directivas necesarias y definir (ver el archivo):
-	dentro de la directiva server:
-		puerto de escucha: listen ####;
-		nombre del sitio: server_name abc.xyz;	
-		# NOTA: si coloca un nombre en server_name, verificar que se pueda resolver a una direccion IP en /etc/hosts
-		locaciones de /static y /media para django
-		locacion del root_site "/"
-			aggregar: uwsgi_pass [ unix:/path/to/unix_socket | <nombre de una directiva upstream> ];
-				### NOTA:
-					si es utiliza un unix_socket, procurar que se otorguen los permisos necesario 
-					para escritura de otros usuarios (usuario de nginx)	o ejecutar
-					nginx con el mismo grupo o usuario con que se ejecuta el uwsgi
-				###
+    la directiva "upstream" no es necesaria si se prueba solo con una instancia de uwsgi,
+    se puede hacer por un socket (ver archivo tes_uwsgi.conf)
+    
+    dentro de la directiva server (necesaria):
+	    numero puerto de escucha: listen ####;
+	    nombre del sitio: server_name abc.xyz; (ej: server_name localhost:8000;)
+	        # NOTA: si coloca un nombre en server_name, verificar que se pueda resolver a una direccion IP en /etc/hosts
+	    codificacion de caracteres: charset     utf-8;
+        tamaño maximo de la peticion: client_max_body_size 75M;
+        archivos de log:
+            access_log $VIRTUALENV_ROOT/logs/nginx.access.log;
+            error_log  /home/benllycas/projectos/prueba/logs/nginx.error.log;
+        locaciones de /static y /media para para el sitio django
+        locacion del root_site "/":
+            aggregar: uwsgi_pass [ unix:/path/to/unix_socket | <nombre de una directiva upstream> ];
+                ### NOTA:
+                    si es utiliza un unix_socket, procurar que uwsgi genere el socket con los permisos necesario 
+                    para escritura de otros usuarios (usuario de nginx)	o ejecutar
+                    nginx con el mismo grupo o usuario con que se ejecuta el uwsgi
+                ###
 
 copiar el archivo dentro de conf/vhost: 
-	comando: cp /root_virtualenv/sitio_django/nombre.conf /root_virtualenv/conf/vhost/
+    comando: cp $VIRTUAL_ENV/sitio_django/nombre.conf $VIRTUAL_ENV/conf/vhost/
 
-agregar la directiva "include vhost/*.conf" al archivo "conf/nginx.conf"
-si realiza un nuevo cambio en la configuracion ->	copiar archivo a conf/vhost nuevamente
-	
+agregar la directiva "include vhost/*.conf" al archivo "conf/nginx.conf" si no esta incluida.
+si realiza un nuevo cambio en la configuracion *.conf,	copiar archivo a conf/vhost nuevamente
+
+### SECCION COMPLETA ###
+
 =========== test de NGINX <-> uwsgi ==================
 NOTA: 
 	si se ejecuta uwsgi para que ejecute un sitio django sobre un unix_socket, 
@@ -206,35 +272,54 @@ NOTA:
 
 inciar uwsgi en modo socket:
 	comando: uwsgi --socket tmp/test.sock wsgi-file test/test_uwsgi.py --chmod-socket=666
-	#si chmod-socket=664 -> ejecutar NGINX con un usuario en el mismo grupo que uwsgi 
+	#si chmod-socket=664 -> ejecutar NGINX con un usuario en el mismo grupo que uwsgi
 
 iniciar NGINX:
 	comando: sudo bin/nginx
+	### en produccion ejecutar nginx con un usuario distinto a root
 
 si realiza un cambio en al configuracion de NGINX ->
 	reload NGINX: "sudo bin/nginx -s reload"
 
+### SECCION COMPLETA ###
+
 =========== test de NGINX <-> uwsgi <-> Django ==================
-inicia rel virtualenv si no lo ha echo
+iniciar el virtualenv si no lo ha echo
 
 ::: uWSGI :::
-	iniciar uwsgi con el archivo de configuracion ini del sitio Django.
-		comando: uwsgi --ini mysite/uwsgi_conf.ini
+    configuracion
+	    en el archivo *.ini del sitio django hacer:
+	        comentar la linea "http-socket = 127.0.0.1:8000"
+	        descomentar la linea "socket = %(my_dir_base)/tmp/mysite_uwsgi.sock" para abilitar uwsgi por socket unix
+	        descomenta la linea de "chmod-socket" despendiendo del usuario
+	        
+	ejecucion:
+	    iniciar uwsgi con el archivo de configuracion ini del sitio Django.
+	        comando: uwsgi --ini mysite/<nombre>.ini
 
 ::: NGINX :::
-	en el archivo .conf echo en la carpeta del sitio Django agregar una directiva
-	upstream seguido de un server apuntando a el socket unix definido en el .ini 
-	de la seccion uwsgi.
-	copiar el archivo modificado a la parpeta conf/vhost
-	ejecutar el servidor.
-		comando: sudo bin/nginx
-	NOTA:si modifica el archivo conf del sitio Django por una correccion, hay que copiar
-	nuevamente el archivo a la carpeta vhost y recargar NGINX con:
-		comando: sudo bin/nginx -s reload
+    configuracion del conf del sitio django:
+        en el archivo .conf echo en la carpeta del sitio Django agregar una directiva
+        upstream seguido de un server apuntando a el socket unix definido en el *.ini 
+        de la seccion uwsgi.
+        verificar que en server-name o el puerto de escucha no este en uso (la pruesba sin django)
+        copiar el archivo modificado a la parpeta conf/vhost
+
+    ejecutar el servidor:
+        comando: sudo bin/nginx
+        
+    NOTA:si modifica el archivo conf del sitio Django por una correccion, hay que copiar
+    nuevamente el archivo a la carpeta vhost y recargar NGINX con:
+        comando: sudo bin/nginx -s reload
+
+### SECCION COMPLETA ###
 
 =========== cambiar usuario a NGINX y uwsgi ==================
 NOTA:
+    esta seccion es opcional porque ya puedes ejecutar el Nginx, uwsgi y django con usuarios diferentes
+    pero si necesitas colocar todo con un solo usurio puedes continuar con esta parte.
 	verificar que ya tiene definido el usuario "www-data" en "/etc/shadow" y el el grupo "www-data" en /etc/group
+
 ::: uWSGI :::
 	para cambiar el usuario de ejecucion de uwsgi ir al archivo ini del sitio Django
 	agregar las siguientes lineas:
@@ -249,7 +334,14 @@ NOTA:
 	para cambiar el usuario de ejecucion en NGINX buscar el archivo conf/nginx.conf
 	abrirlo con un editor y buscar la linea que dice "#user nobody;".
 	descomentar esa linea y en "nobody" cambiar con el nombre de usuario que desee ej: www-data
-	
+
+aun no funciona. hay que hacer nginx con sudo y mantener los permisos en 666
+
 =========== cosas por hacer ==================
 instalar NGINX en sistema base y probar el sitio desde alli
-
+instalar node
+colocar node detras de nginx
+instalar redis
+colocar redis detras de nginx
+conectar node + django + redis
+realizar el script con fabric para automatizar todo lo anterior.
